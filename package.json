@@ -1,0 +1,20 @@
+{
+  "name": "serverless-plugin-invoke-deployment",
+  "version": "1.0.0",
+  "description": "Serverless plugin to invoke function after deployment",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SeptiyanAndika/serverless-plugin-invoke-deployment.git"
+  },
+  "keywords":["serverless", "serverless-plugin", "aws", "aws-lambda", "lambda"],
+  "author": "Septiyan Andika <septiyan@andika.me>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/SeptiyanAndika/serverless-plugin-invoke-deployment/issues"
+  },
+  "homepage": "https://github.com/SeptiyanAndika/serverless-plugin-invoke-deployment#readme"
+}
