@@ -20,7 +20,7 @@ service: example-invoke-deployment # NOTE: update this with your service name
 provider:
   name: aws
   runtime: nodejs8.10
-  stage: dev
+  stage: ${opt:stage, 'dev'}
   region: ap-southeast-1
 
 # you can overwrite defaults here

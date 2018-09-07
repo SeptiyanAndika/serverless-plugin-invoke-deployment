@@ -1,16 +1,62 @@
 class InvokeDeployment {
     constructor(serverless, options) {
         this.serverless = serverless;
-        this.serviceName = this.serverless.service.service;
-        this.serviceStage = this.serverless.service.provider.stage;
+        this.options = options;
         this.functions = serverless.service.functions;
         this.provider = this.serverless.getProvider('aws');
         this.hooks = {
-            'after:deploy:deploy': this.postDeploy.bind(this)
+            'after:deploy:deploy': this.afterDeploy.bind(this)
         };
     }
 
-    postDeploy() {
+    getFunctionList() {
+        let functionList = [];
+        let stackName = this.getStackName();
+        for (const [key, value] of Object.entries(this.functions)) {
+            switch (typeof value.invokeAfterDeploy) {
+                case "boolean": {
+                    if (value.invokeAfterDeploy === true) {
+                        functionList.push({
+                            functionName: `${stackName}-${key}`,
+                            payload: {}
+                        })
+                    }
+                }
+                case "object" : {
+                    let options = value.invokeAfterDeploy;
+                    if (options.enabled === true) {
+                        functionList.push({
+                            functionName: `${stackName}-${key}`,
+                            payload: options.payload || {}
+                        })
+                    }
+                }
+            }
+
+        }
+        return functionList
+    }
+
+
+    getStage() {
+        let returnValue = 'dev';
+        if (this.options && this.options.stage) {
+            returnValue = this.options.stage;
+        } else if (this.serverless.service.provider.stage) {
+            returnValue = this.serverless.service.provider.stage;
+            if (returnValue.indexOf("opt:stage") != -1) {
+                returnValue = returnValue.split(",")[1] || 'dev';
+                returnValue = returnValue.replace(/[^0-9a-zA-Z ]/g, "")
+            }
+        }
+        return returnValue.trim();
+    }
+
+    getStackName() {
+        return `${this.serverless.service.service}-${this.getStage()}`;
+    }
+
+    afterDeploy() {
         let functionList = this.getFunctionList();
         let workers = [];
         functionList.forEach(item => {
@@ -24,32 +70,6 @@ class InvokeDeployment {
         })
     }
 
-    getFunctionList() {
-        let functionList = [];
-        for (const [key, value] of Object.entries(this.functions)) {
-            switch (typeof value.invokeAfterDeploy) {
-                case "boolean": {
-                    if (value.invokeAfterDeploy === true) {
-                        functionList.push({
-                            functionName: `${this.serviceName}-${this.serviceStage}-${key}`,
-                            payload: {}
-                        })
-                    }
-                }
-                case "object" : {
-                    let options = value.invokeAfterDeploy;
-                    if (options.enabled === true) {
-                        functionList.push({
-                            functionName: `${this.serviceName}-${this.serviceStage}-${key}`,
-                            payload: options.payload || {}
-                        })
-                    }
-                }
-            }
-
-        }
-        return functionList
-    }
 
     invokeFunction(functionName, payload) {
         this.serverless.cli.log(`After Deploy: Invoking ${functionName} with payload :${JSON.stringify(payload)}`);
@@ -61,6 +81,8 @@ class InvokeDeployment {
 
         return this.provider.request('Lambda', 'invoke', params)
     }
+
+
 }
 
 module.exports = InvokeDeployment;
