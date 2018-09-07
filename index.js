@@ -11,10 +11,10 @@ class InvokeDeployment {
     }
 
     postDeploy() {
-        let functionsName = this.getInvokeFunctionName();
+        let functionList = this.getFunctionList();
         let workers = [];
-        functionsName.forEach(name => {
-            workers.push(this.invokeFunction(name));
+        functionList.forEach(item => {
+            workers.push(this.invokeFunction(item.functionName, item.payload));
         })
 
         Promise.all(workers).then((res) => {
@@ -24,21 +24,39 @@ class InvokeDeployment {
         })
     }
 
-    getInvokeFunctionName() {
-        let functionsName = [];
+    getFunctionList() {
+        let functionList = [];
         for (const [key, value] of Object.entries(this.functions)) {
-            if (value.invokeAfterDeploy === true) {
-                functionsName.push(`${this.serviceName}-${this.serviceStage}-${key}`)
+            switch (typeof value.invokeAfterDeploy) {
+                case "boolean": {
+                    if (value.invokeAfterDeploy === true) {
+                        functionList.push({
+                            functionName: `${this.serviceName}-${this.serviceStage}-${key}`,
+                            payload: {}
+                        })
+                    }
+                }
+                case "object" : {
+                    let options = value.invokeAfterDeploy;
+                    if (options.enabled === true) {
+                        functionList.push({
+                            functionName: `${this.serviceName}-${this.serviceStage}-${key}`,
+                            payload: options.payload || {}
+                        })
+                    }
+                }
             }
+
         }
-        return functionsName
+        return functionList
     }
 
-    invokeFunction(functionName) {
-        this.serverless.cli.log(`After Deploy: Invoking ${functionName} ......`);
+    invokeFunction(functionName, payload) {
+        this.serverless.cli.log(`After Deploy: Invoking ${functionName} with payload :${JSON.stringify(payload)}`);
         const params = {
             FunctionName: functionName,
-            InvocationType:'Event'
+            InvocationType: 'Event',
+            Payload: JSON.stringify(payload)
         };
 
         return this.provider.request('Lambda', 'invoke', params)

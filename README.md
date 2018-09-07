@@ -30,5 +30,23 @@ functions:
     invokeAfterDeploy: true
 ```
 
+if want use input param (payload) can use detail for invokeAfterDeploy
+```yaml
+functions:
+  hello:
+    handler: handler.hello
+    invokeAfterDeploy:
+      enabled: true
+      payload:
+        varA : varA
+        varB : 20
+        varObject:
+          object1 : a
+          object2 : 1
+        varArray:
+          - a
+          - b
+```
+
 ## License
 MIT license.
